@@ -224,6 +224,14 @@
           <div class="now">now: <b id="nowCh">—</b></div>
         </div>
         <div class="palettes" id="palBox"></div>
+        // Add this to your HTML (e.g., near the palettes)
+        <div class="aesthetic-presets">
+          <span class="chip" id="preset-vaporwave">Vaporwave</span>
+          <span class="chip" id="preset-liminal">Liminal</span>
+          <span class="chip" id="preset-smoothjazz">Smooth Jazz</span>
+          <span class="chip" id="preset-psybient">Psybient</span>
+        </div>
+
         <div class="transport">
           <div class="seg" id="styleSeg">
             <button data-s="chill" class="on">CHILL</button>
@@ -336,6 +344,37 @@
       o1.start(tt); o2.start(tt); o1.stop(tt+dur+2.5); o2.stop(tt+dur+2.5);
     });
   }
+  // Replace your playChord function with this enhanced version
+// function playChord(t, ch, opt) {
+//   opt = opt || {};
+//   const voicings = {
+//     // Major chords
+//     'maj7': [0, 4, 7, 11],
+//     'maj9': [0, 4, 7, 11, 14],
+//     '6': [0, 4, 7, 9],
+//     '6/9': [0, 4, 7, 9, 14],
+    
+//     // Minor chords
+//     'm7': [0, 3, 7, 10],
+//     'm9': [0, 3, 7, 10, 14],
+//     'm11': [0, 3, 7, 10, 14, 17],
+    
+//     // Dominant chords
+//     '7': [0, 4, 7, 10],
+//     '9': [0, 4, 7, 10, 14],
+//     '13': [0, 4, 7, 10, 14, 21],
+//     '7sus4': [0, 5, 7, 10],
+//     '7#9': [0, 4, 7, 10, 15],
+//     '7b9': [0, 4, 7, 10, 13],
+    
+//     // Suspended chords
+//     'sus2': [0, 2, 7],
+//     'sus4': [0, 5, 7],
+    
+//     // Extended chords
+//     'maj7#11': [0, 4, 7, 11, 18],
+//     'm7b5': [0, 3, 6, 10]
+//   };
   function ping(m,t,vol){
     vol=vol||0.11;
     var o=AC.createOscillator(); o.type="sine"; o.frequency.value=midiF(m);
@@ -419,6 +458,81 @@
       {name:"Cmaj7♯11",mood:"aurora",notes:[48,55,59,64,66],hue:"#34d6a0",bg:"var(--mint)"},
       {name:"Gmaj7",mood:"ember",notes:[43,50,54,59],hue:"#ffcb2e",bg:"var(--yellow)"},
       {name:"Bm7",mood:"orbit",notes:[47,54,57,62],hue:"#9d86ff",bg:"var(--lav)"}]}
+    // Add these to your PAL array (after the existing palettes)
+{
+  id: "smooth-jazz",
+  label: "smooth jazz",
+  cr: "velvet midnight",
+  bpm: 98,
+  chords: [
+    {name: "Dm9", mood: "smoke", notes: [50, 57, 60, 64, 67], hue: "#2d6cf6", bg: "var(--blue)"},
+    {name: "G13", mood: "whiskey", notes: [43, 50, 55, 59, 64], hue: "#ffcb2e", bg: "var(--yellow)"},
+    {name: "Cmaj9#11", mood: "silk", notes: [48, 55, 60, 64, 66], hue: "#ff90bd", bg: "var(--pink)"},
+    {name: "F#m11", mood: "moonlight", notes: [53, 57, 61, 64, 66], hue: "#34d6a0", bg: "var(--mint)"},
+    {name: "Bbm9", mood: "leather", notes: [46, 53, 57, 60, 64], hue: "#9d86ff", bg: "var(--lav)"}
+  ]
+},
+{
+  id: "lounge",
+  label: "lounge",
+  cr: "neon dawn",
+  bpm: 104,
+  chords: [
+    {name: "Em9", mood: "haze", notes: [40, 47, 52, 56, 60], hue: "#9d86ff", bg: "var(--lav)"},
+    {name: "A7#9", mood: "mystery", notes: [45, 52, 56, 60, 64], hue: "#ff5e4d", bg: "var(--coral)"},
+    {name: "Cmaj7", mood: "sunset", notes: [48, 52, 55, 60], hue: "#ffcb2e", bg: "var(--yellow)"},
+    {name: "F#m7b5", mood: "shadow", notes: [41, 46, 50, 53], hue: "#2d6cf6", bg: "var(--blue)"},
+    {name: "Bm11", mood: "breeze", notes: [47, 50, 54, 57, 60], hue: "#34d6a0", bg: "var(--mint)"}
+  ]
+},
+{
+  id: "vaporwave",
+  label: "vaporwave",
+  cr: "mall soft",
+  bpm: 110,
+  chords: [
+    {name: "Fmaj7", mood: "elevator", notes: [41, 48, 53, 57], hue: "#ff90bd", bg: "var(--pink)"},
+    {name: "Dm7", mood: "escalator", notes: [50, 57, 60, 64], hue: "#2d6cf6", bg: "var(--blue)"},
+    {name: "Bbmaj7", mood: "fountain", notes: [46, 53, 57, 60], hue: "#ffcb2e", bg: "var(--yellow)"},
+    {name: "Gm7", mood: "palm tree", notes: [43, 50, 53, 57], hue: "#34d6a0", bg: "var(--mint)"}
+  ]
+},
+{
+  id: "liminal",
+  label: "liminal",
+  cr: "backrooms",
+  bpm: 88,
+  chords: [
+    {name: "Cm7", mood: "hallway", notes: [48, 51, 55, 58], hue: "#181410", bg: "var(--ink)"},
+    {name: "Abmaj7", mood: "buzz", notes: [44, 48, 51, 55], hue: "#9d86ff", bg: "var(--lav)"},
+    {name: "Eb7sus4", mood: "flicker", notes: [51, 55, 58, 61], hue: "#ff5e4d", bg: "var(--coral)"},
+    {name: "Fm7", mood: "static", notes: [41, 44, 48, 51], hue: "#2d6cf6", bg: "var(--blue)"}
+  ]
+},
+{
+  id: "flume",
+  label: "flume",
+  cr: "future nostalgia",
+  bpm: 126,
+  chords: [
+    {name: "C#m7", mood: "glitch", notes: [49, 52, 56, 59], hue: "#34d6a0", bg: "var(--mint)"},
+    {name: "Amaj7", mood: "bloom", notes: [45, 52, 56, 59, 61], hue: "#ffcb2e", bg: "var(--yellow)"},
+    {name: "F#m7", mood: "pulse", notes: [41, 46, 50, 53], hue: "#9d86ff", bg: "var(--lav)"},
+    {name: "Dmaj7", mood: "float", notes: [50, 54, 57, 61], hue: "#ff90bd", bg: "var(--pink)"}
+  ]
+},
+{
+  id: "tame-impala",
+  label: "tame impala",
+  cr: "psychedelic pop",
+  bpm: 102,
+  chords: [
+    {name: "Am7", mood: "dream", notes: [45, 52, 55, 58], hue: "#ff5e4d", bg: "var(--coral)"},
+    {name: "Fmaj7", mood: "waves", notes: [41, 48, 53, 57], hue: "#ffcb2e", bg: "var(--yellow)"},
+    {name: "C/G", mood: "swirl", notes: [39, 48, 52, 55], hue: "#34d6a0", bg: "var(--mint)"},
+    {name: "D7sus4", mood: "spin", notes: [50, 54, 57, 61], hue: "#2d6cf6", bg: "var(--blue)"}
+  ]
+}
   ];
   var LOCRIAN={name:"E7♭9♭13", mood:"the abyss", notes:[40,56,62,65,72], hue:"#181410"};
   var curPal=0, progIdx=0;
@@ -747,6 +861,83 @@
   document.addEventListener("pointerdown",unlock);
 
   setAccent(PAL[0].chords[0]); updateBpmLab();
+
+
+  
+// Add this to your JavaScript
+const AESTHETIC_PRESETS = {
+  vaporwave: {
+    palette: "vaporwave",
+    style: "chill",
+    swing: false,
+    streaks: true,
+    bpm: 110,
+    accent: "#ff90bd"
+  },
+  liminal: {
+    palette: "liminal",
+    style: "chill",
+    swing: false,
+    streaks: false,
+    bpm: 88,
+    accent: "#181410"
+  },
+  smoothjazz: {
+    palette: "smooth-jazz",
+    style: "house",
+    swing: true,
+    streaks: true,
+    bpm: 98,
+    accent: "#2d6cf6"
+  },
+  psybient: {
+    palette: 0, // Use first palette (or custom)
+    style: "chill",
+    swing: true,
+    streaks: false,
+    bpm: 104,
+    accent: "#9d86ff"
+  }
+};
+
+// Wire up the preset buttons
+Object.keys(AESTHETIC_PRESETS).forEach(id => {
+  const preset = AESTHETIC_PRESETS[id];
+  document.getElementById(`preset-${id}`).addEventListener("click", () => {
+    // Set palette
+    const paletteIndex = PAL.findIndex(p => p.id === preset.palette);
+    if (paletteIndex !== -1) curPal = paletteIndex;
+    
+    // Update UI
+    document.querySelectorAll(".pal").forEach((p, i) => {
+      p.classList.toggle("on", i === curPal);
+    });
+    
+    // Set style
+    style = preset.style;
+    document.querySelectorAll("[data-s]").forEach(b => {
+      b.classList.toggle("on", b.dataset.s === style);
+    });
+    
+    // Set swing/streaks
+    setSwing(preset.swing);
+    setStreaks(preset.streaks);
+    
+    // Set BPM
+    PAL[curPal].bpm = preset.bpm;
+    updateBpmLab();
+    
+    // Set accent color
+    root.style.setProperty("--acc", preset.accent);
+    
+    // Re-render pads
+    renderPads();
+    setAccent(PAL[curPal].chords[0]);
+    
+    // Restart if playing
+    restartIfPlaying();
+  });
+});
 })();
 </script>
 </body>
