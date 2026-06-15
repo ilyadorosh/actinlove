@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAM Tori — a Poincaré observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#070a10; --ink2:#0b1018; --panel:#0e141e; --line:#1d2738;
+    --fg:#e7e2d4; --dim:#8a93a6; --faint:#5a6478;
+    --gold:#e8b65a; --gold-dim:#9c7a35; --cyan:#69d4e6;
+    --warn:#e0795b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1200px 700px at 78% -10%, #121a27 0%, transparent 55%),
+      radial-gradient(900px 600px at -10% 110%, #11161f 0%, transparent 50%),
+      var(--ink);
+    color:var(--fg); font-family:"IBM Plex Mono",monospace;
+    min-height:100%; overflow-x:hidden;
+  }
+  body::before{ /* faint grain */
+    content:""; position:fixed; inset:0; pointer-events:none; opacity:.035; z-index:99;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:34px 26px 70px}
+  header{display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap;
+    border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:26px}
+  .ttl{font-family:"Fraunces",serif; font-weight:600; font-size:clamp(30px,5vw,52px);
+    line-height:.95; letter-spacing:-.5px}
+  .ttl em{font-style:italic; color:var(--gold); font-weight:400}
+  .sub{color:var(--dim); font-size:13px; max-width:520px; margin-top:12px; line-height:1.55}
+  .sig{font-family:"IBM Plex Mono"; font-size:12px; color:var(--faint); text-align:right; line-height:1.7}
+  .sig b{color:var(--gold-dim); font-weight:500}
+  .face{font-size:18px; color:var(--gold)}
+
+  .tabs{display:flex; gap:6px; margin-bottom:18px}
+  .tab{font-family:"IBM Plex Mono"; font-size:12.5px; letter-spacing:.04em; color:var(--dim);
+    background:transparent; border:1px solid var(--line); padding:9px 16px; cursor:pointer;
+    border-radius:2px; transition:.18s; text-transform:uppercase}
+  .tab:hover{color:var(--fg); border-color:var(--gold-dim)}
+  .tab.on{color:var(--ink); background:var(--gold); border-color:var(--gold); font-weight:500}
+
+  .stage{display:grid; grid-template-columns: 1fr 318px; gap:24px}
+  @media(max-width:880px){ .stage{grid-template-columns:1fr} }
+
+  .plotwrap{position:relative; background:var(--ink2); border:1px solid var(--line);
+    border-radius:3px; aspect-ratio:1/1; overflow:hidden}
+  canvas{display:block; width:100%; height:100%; cursor:crosshair}
+  .axislbl{position:absolute; font-size:11px; color:var(--faint); letter-spacing:.05em; pointer-events:none}
+  .corner{position:absolute; top:12px; left:14px; font-size:11px; color:var(--dim); pointer-events:none; line-height:1.6}
+  .corner b{color:var(--gold); font-weight:500}
+  .hint{position:absolute; bottom:11px; right:13px; font-size:10.5px; color:var(--faint); pointer-events:none}
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:22px 20px;
+    align-self:start; position:sticky; top:24px}
+  .panel h3{font-family:"Fraunces",serif; font-weight:600; font-size:17px; margin-bottom:4px}
+  .panel .desc{color:var(--dim); font-size:12px; line-height:1.55; margin-bottom:20px}
+  .ctl{margin-bottom:22px}
+  .ctl label{display:flex; justify-content:space-between; font-size:11.5px; letter-spacing:.04em;
+    color:var(--dim); margin-bottom:9px; text-transform:uppercase}
+  .ctl label .val{color:var(--gold); font-variant-numeric:tabular-nums}
+  input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px;
+    background:var(--line); outline:none; border-radius:2px}
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none;
+    width:15px; height:15px; border-radius:50%; background:var(--gold); cursor:pointer;
+    border:2px solid var(--ink); box-shadow:0 0 0 1px var(--gold-dim)}
+  input[type=range]::-moz-range-thumb{ width:15px; height:15px; border-radius:50%; background:var(--gold);
+    cursor:pointer; border:2px solid var(--ink)}
+  .marks{display:flex; justify-content:space-between; font-size:9.5px; color:var(--faint); margin-top:6px}
+
+  .btnrow{display:flex; gap:8px; margin-bottom:18px}
+  .btn{flex:1; font-family:"IBM Plex Mono"; font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--fg); background:var(--ink2); border:1px solid var(--line); padding:11px 8px; cursor:pointer;
+    border-radius:2px; transition:.15s}
+  .btn:hover{border-color:var(--gold-dim); color:var(--gold)}
+  .btn.primary{background:transparent; border-color:var(--gold-dim); color:var(--gold)}
+
+  .read{border-top:1px solid var(--line); padding-top:16px; font-size:11.5px; line-height:1.85; color:var(--dim)}
+  .read .row{display:flex; justify-content:space-between}
+  .read .row span:last-child{color:var(--fg); font-variant-numeric:tabular-nums}
+  .regime{margin-top:14px; padding:11px 13px; border-left:2px solid var(--gold); background:#12161f;
+    font-size:11.5px; line-height:1.5; color:var(--fg)}
+  .regime b{color:var(--gold)}
+
+  .note{margin-top:34px; border-top:1px solid var(--line); padding-top:22px; columns:2; column-gap:42px;
+    font-size:12.5px; line-height:1.7; color:var(--dim)}
+  @media(max-width:880px){ .note{columns:1} }
+  .note h4{font-family:"Fraunces",serif; color:var(--gold); font-size:15px; margin-bottom:8px; break-after:avoid}
+  .note p{margin-bottom:14px; break-inside:avoid}
+  .note em{color:var(--fg); font-style:italic}
+  .k{color:var(--cyan)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="ttl">The persistence of <em>tori</em></div>
+      <div class="sub">A Poincaré observatory for the KAM theorem. Each colored ring is one orbit
+        of a Hamiltonian system, sliced where it crosses a surface in phase space. Turn up the
+        perturbation and watch the invariant tori — the engines of long-term stability — survive,
+        wrinkle, and finally drown in a chaotic sea.</div>
+    </div>
+    <div class="sig">
+      <span class="face">\(◕ᴗ◕)/</span><br>
+      <b>companion build</b> · v2.3<br>
+      Hénon–Heiles · Chirikov<br>
+      symplectic leapfrog
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab on" data-sys="hh">Hénon–Heiles flow</button>
+    <button class="tab" data-sys="sm">Chirikov standard map</button>
+  </div>
+
+  <div class="stage">
+    <div class="plotwrap">
+      <canvas id="cv"></canvas>
+      <div class="corner" id="corner"></div>
+      <div class="hint">click anywhere to launch a new orbit</div>
+      <div class="axislbl" id="xlbl" style="bottom:8px; left:50%; transform:translateX(-50%)"></div>
+      <div class="axislbl" id="ylbl" style="left:8px; top:50%; transform:translate(-50%,-50%) rotate(-90deg)"></div>
+    </div>
+
+    <div class="panel">
+      <h3 id="pTitle">Hénon–Heiles</h3>
+      <div class="desc" id="pDesc"></div>
+
+      <div id="ctlHH">
+        <div class="ctl">
+          <label>energy &nbsp;E <span class="val" id="vE">0.083</span></label>
+          <input type="range" id="sE" min="0.02" max="0.1665" step="0.0005" value="0.083">
+          <div class="marks"><span>0.02 · regular</span><span>1/6 · escape</span></div>
+        </div>
+        <div class="ctl">
+          <label>perturbation &nbsp;λ <span class="val" id="vL">1.00</span></label>
+          <input type="range" id="sL" min="0" max="1.5" step="0.01" value="1.0">
+          <div class="marks"><span>0 · integrable</span><span>1.5 · strong</span></div>
+        </div>
+      </div>
+
+      <div id="ctlSM" style="display:none">
+        <div class="ctl">
+          <label>kick strength &nbsp;K <span class="val" id="vK">0.60</span></label>
+          <input type="range" id="sK" min="0" max="2.2" step="0.005" value="0.6">
+          <div class="marks"><span>0 · all tori</span><span>K<sub>c</sub>≈0.9716</span></div>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn primary" id="bRun">Re-seed</button>
+        <button class="btn" id="bClear">Clear</button>
+      </div>
+
+      <div class="read">
+        <div class="row"><span>orbits</span><span id="rOrb">0</span></div>
+        <div class="row"><span>points plotted</span><span id="rPts">0</span></div>
+        <div class="row"><span id="rIntL">section crossings</span><span id="rState">idle</span></div>
+      </div>
+      <div class="regime" id="regime"></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <h4>What am I looking at?</h4>
+    <p>A <em>Poincaré section</em> records a trajectory only at the instants it punches through a chosen
+    slice of phase space (here <span class="k">y=0</span> with <span class="k">p<sub>y</sub>&gt;0</span> for the flow). A
+    quasi-periodic orbit lives on an invariant torus, so its punctures fall on a smooth closed curve.
+    Chaos scatters punctures into a haze.</p>
+
+    <h4>The KAM theorem</h4>
+    <p>Write a near-integrable system as <em>H = H₀ + λH₁</em>. At λ=0 every orbit sits on a torus.
+    Kolmogorov, Arnold and Moser proved that for small λ <em>most</em> of these tori merely deform and survive —
+    specifically the ones whose frequency vector ω is <em>Diophantine</em>,
+    <span class="k">|⟨k,ω⟩| ≥ κ/|k|ᵗ</span>. The "most irrational" tori are the last to break.</p>
+
+    <h4>Birkhoff & stability</h4>
+    <p>Near such a torus the dynamics can be put into <em>Birkhoff normal form</em>. Eliasson, Fayad &
+    Krikorian (<em>Duke Math. J.</em>, 2015) showed a Diophantine torus is never isolated: if its normal
+    form is non-degenerate it is <em>accumulated</em> by a positive-measure cloud of KAM tori — exactly
+    the colored nests you see persisting on the left.</p>
+
+    <h4>…and the neural net</h4>
+    <p>The companion notebook learns this same flow with a <em>Hamiltonian neural network</em>: it predicts
+    a scalar energy and moves along its symplectic gradient, so energy is conserved by construction and the
+    learned trajectories stay pinned to the tori. A plain network, lacking that physics, drifts off them.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+const TAU = Math.PI*2;
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W=0,H=0,DPR=1;
+
+function resize(){
+  const r = cv.parentElement.getBoundingClientRect();
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = r.width; H = r.height;
+  cv.width = W*DPR; cv.height = H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  redrawAll();
+}
+window.addEventListener('resize', resize);
+
+// ---------- state ----------
+let sys='hh';
+let params={E:0.083, lam:1.0, K:0.6};
+let orbits=[];           // {hue, pts:[[x,y]], st:[...], alive, n}
+let raf=null;
+const PAD=26;            // px padding inside plot for axes
+
+// data-space half-extent depends on system / energy
+function extent(){
+  if(sys==='hh'){ const h=Math.sqrt(2*params.E)*1.18; return {xmin:-h,xmax:h,ymin:-h,ymax:h}; }
+  return {xmin:0,xmax:1,ymin:0,ymax:1};
+}
+function toPix(x,y){
+  const e=extent();
+  const px = PAD + (x-e.xmin)/(e.xmax-e.xmin)*(W-2*PAD);
+  const py = (H-PAD) - (y-e.ymin)/(e.ymax-e.ymin)*(H-2*PAD);
+  return [px,py];
+}
+function toData(px,py){
+  const e=extent();
+  const x = e.xmin + (px-PAD)/(W-2*PAD)*(e.xmax-e.xmin);
+  const y = e.ymin + ((H-PAD)-py)/(H-2*PAD)*(e.ymax-e.ymin);
+  return [x,y];
+}
+
+// ---------- background / axes ----------
+function drawBg(){
+  ctx.clearRect(0,0,W,H);
+  // faint frame grid
+  ctx.strokeStyle='rgba(120,140,170,0.10)'; ctx.lineWidth=1;
+  const e=extent();
+  const nx = sys==='hh'?5:6;
+  for(let i=0;i<=nx;i++){
+    const fx = i/nx;
+    const X = PAD+fx*(W-2*PAD); const Y = PAD+fx*(H-2*PAD);
+    ctx.beginPath(); ctx.moveTo(X,PAD); ctx.lineTo(X,H-PAD); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD,Y); ctx.lineTo(W-PAD,Y); ctx.stroke();
+  }
+  // axes through origin (hh) 
+  if(sys==='hh'){
+    const [ox,oy]=toPix(0,0);
+    ctx.strokeStyle='rgba(180,190,210,0.22)';
+    ctx.beginPath(); ctx.moveTo(PAD,oy); ctx.lineTo(W-PAD,oy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox,PAD); ctx.lineTo(ox,H-PAD); ctx.stroke();
+  }
+}
+
+function drawPointsFor(o){
+  const col=`hsl(${o.hue} 78% 62%)`;
+  ctx.fillStyle=col;
+  for(let i=o.drawn||0;i<o.pts.length;i++){
+    const [x,y]=o.pts[i]; const [px,py]=toPix(x,y);
+    ctx.fillRect(px,py,1.4,1.4);
+  }
+  o.drawn=o.pts.length;
+}
+function redrawAll(){
+  drawBg();
+  for(const o of orbits){ o.drawn=0; drawPointsFor(o); }
+}
+
+// ---------- Hénon–Heiles : symplectic leapfrog ----------
+// state [x,y,px,py]; H=1/2(px^2+py^2)+1/2(x^2+y^2)+lam(x^2 y - y^3/3)
+const DT=0.012;
+function hhForce(x,y,lam){ return [ -x-2*lam*x*y, -y-lam*(x*x-y*y) ]; }
+function hhStep(s,lam){
+  let [x,y,px,py]=s;
+  let [fx,fy]=hhForce(x,y,lam);
+  px+=0.5*DT*fx; py+=0.5*DT*fy;
+  x+=DT*px; y+=DT*py;
+  [fx,fy]=hhForce(x,y,lam);
+  px+=0.5*DT*fx; py+=0.5*DT*fy;
+  return [x,y,px,py];
+}
+// build an initial condition on section y=0, py>0 from (x0,px0)
+function hhIC(x0,px0,E){
+  const py2 = 2*E - x0*x0 - px0*px0;
+  if(py2<=1e-4) return null;
+  return [x0,0,px0,Math.sqrt(py2)];
+}
+function seedHH(){
+  orbits=[]; const E=params.E; const ng=7;
+  const R=Math.sqrt(2*E);
+  let k=0,total=0;
+  const cand=[];
+  for(let i=0;i<ng;i++)for(let j=0;j<ng;j++){
+    const x0=(-0.92+1.84*i/(ng-1))*R, p0=(-0.92+1.84*j/(ng-1))*R;
+    const ic=hhIC(x0,p0,E); if(ic) cand.push(ic);
+  }
+  cand.forEach((ic,idx)=>{
+    orbits.push({hue:(idx*360/cand.length+18)%360, pts:[], st:ic, prevY:ic[1], alive:true, n:0, drawn:0});
+  });
+}
+function stepHH(o, budget){
+  const lam=params.lam; let s=o.st, prevY=o.prevY, made=0;
+  for(let i=0;i<budget;i++){
+    const sn=hhStep(s,lam);
+    if(prevY<0 && sn[1]>=0 && sn[3]>0){
+      const a=-prevY/(sn[1]-prevY);
+      o.pts.push([ s[0]+a*(sn[0]-s[0]), s[2]+a*(sn[2]-s[2]) ]);
+      made++;
+      if(o.pts.length>=420){o.alive=false;break;}
+    }
+    if(Math.abs(sn[0])>2.5||Math.abs(sn[1])>2.5){o.alive=false;break;}
+    prevY=sn[1]; s=sn;
+  }
+  o.st=s; o.prevY=prevY; return made;
+}
+
+// ---------- Chirikov standard map ----------
+// p' = p + K sin θ ; θ' = θ + p'  (mod 2π). plot θ/2π , p/2π
+function seedSM(){
+  orbits=[]; const n=26;
+  for(let i=0;i<n;i++){
+    const p0=TAU*(i+0.5)/n;          // spread in p
+    orbits.push({hue:(i*360/n+18)%360, pts:[], st:[Math.PI, p0], alive:true, n:0, drawn:0});
+  }
+}
+function stepSM(o, budget){
+  const K=params.K; let [th,p]=o.st; let made=0;
+  for(let i=0;i<budget;i++){
+    p = p + K*Math.sin(th);
+    th = th + p;
+    // wrap
+    p = p - TAU*Math.floor(p/TAU);
+    th = th - TAU*Math.floor(th/TAU);
+    o.pts.push([th/TAU, p/TAU]); made++;
+    if(o.pts.length>=900){o.alive=false;break;}
+  }
+  o.st=[th,p]; return made;
+}
+
+// ---------- animation loop ----------
+function loop(){
+  let anyAlive=false, totalPts=0;
+  const budget = sys==='hh'? 260 : 70;
+  for(const o of orbits){
+    if(o.alive){ (sys==='hh'?stepHH:stepSM)(o, budget); anyAlive = anyAlive || o.alive; }
+    drawPointsFor(o);
+    totalPts+=o.pts.length;
+  }
+  document.getElementById('rOrb').textContent=orbits.length;
+  document.getElementById('rPts').textContent=totalPts.toLocaleString();
+  document.getElementById('rState').textContent= anyAlive? 'integrating…' : 'complete';
+  if(anyAlive){ raf=requestAnimationFrame(loop); } else { raf=null; }
+}
+function run(){
+  if(raf) cancelAnimationFrame(raf);
+  drawBg();
+  (sys==='hh'?seedHH:seedSM)();
+  updateReadouts();
+  raf=requestAnimationFrame(loop);
+}
+function clearAll(){ if(raf)cancelAnimationFrame(raf); raf=null; orbits=[]; drawBg(); 
+  document.getElementById('rOrb').textContent=0; document.getElementById('rPts').textContent=0;
+  document.getElementById('rState').textContent='idle'; }
+
+// click to add orbit
+cv.addEventListener('click',(ev)=>{
+  const r=cv.getBoundingClientRect();
+  const px=(ev.clientX-r.left), py=(ev.clientY-r.top);
+  const [dx,dy]=toData(px,py);
+  let o;
+  if(sys==='hh'){
+    const ic=hhIC(dx,dy,params.E); if(!ic) return;
+    o={hue:(orbits.length*47+200)%360, pts:[], st:ic, prevY:ic[1], alive:true, n:0, drawn:0};
+  } else {
+    o={hue:(orbits.length*47+200)%360, pts:[], st:[dx*TAU, dy*TAU], alive:true, n:0, drawn:0};
+  }
+  orbits.push(o);
+  if(!raf) raf=requestAnimationFrame(loop);
+});
+
+// ---------- regime + labels ----------
+function regimeTextHH(){
+  const E=params.E, lam=params.lam, frac=lam*lam*E/(1/6);
+  if(frac<0.35) return ['mostly regular','Nested tori dominate — almost every orbit is quasi-periodic and confined.'];
+  if(frac<0.75) return ['mixed phase space','A chaotic web threads between surviving islands. The most-irrational tori still hold.'];
+  return ['near-global chaos','The last KAM tori have broken; orbits wander a connected chaotic sea.'];
+}
+function regimeTextSM(){
+  const K=params.K;
+  if(K<0.6) return ['mostly regular','Invariant circles span the cylinder; transport in p is blocked.'];
+  if(K<0.9716) return ['critical approach','Tori are wrinkling. The golden-mean circle is the last barrier to global transport.'];
+  if(K<1.3) return ['barrier broken','Above K≈0.9716 the last rotational torus is gone — p can now diffuse across the whole range.'];
+  return ['strong chaos','A dominant chaotic sea with shrinking islands of stability.'];
+}
+function updateReadouts(){
+  const e=extent();
+  if(sys==='hh'){
+    document.getElementById('corner').innerHTML =
+      `Hénon–Heiles · section <b>y=0, p<sub>y</sub>&gt;0</b><br>E=${params.E.toFixed(3)} &nbsp; λ=${params.lam.toFixed(2)}`;
+    document.getElementById('xlbl').textContent='x';
+    document.getElementById('ylbl').textContent='pₓ';
+    document.getElementById('rIntL').textContent='section crossings';
+    const [t,d]=regimeTextHH();
+    document.getElementById('regime').innerHTML=`<b>${t}.</b> ${d}`;
+  } else {
+    document.getElementById('corner').innerHTML =
+      `Chirikov standard map<br>K=${params.K.toFixed(3)}`;
+    document.getElementById('xlbl').textContent='θ / 2π';
+    document.getElementById('ylbl').textContent='p / 2π';
+    document.getElementById('rIntL').textContent='iterates';
+    const [t,d]=regimeTextSM();
+    document.getElementById('regime').innerHTML=`<b>${t}.</b> ${d}`;
+  }
+}
+
+// ---------- wiring ----------
+const sE=document.getElementById('sE'), sL=document.getElementById('sL'), sK=document.getElementById('sK');
+let debounce=null;
+function softRun(){ clearTimeout(debounce); debounce=setTimeout(run,180); }
+sE.addEventListener('input',()=>{ params.E=+sE.value; document.getElementById('vE').textContent=params.E.toFixed(3); updateReadouts(); softRun(); });
+sL.addEventListener('input',()=>{ params.lam=+sL.value; document.getElementById('vL').textContent=params.lam.toFixed(2); updateReadouts(); softRun(); });
+sK.addEventListener('input',()=>{ params.K=+sK.value; document.getElementById('vK').textContent=params.K.toFixed(3); updateReadouts(); softRun(); });
+document.getElementById('bRun').addEventListener('click',run);
+document.getElementById('bClear').addEventListener('click',clearAll);
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); sys=t.dataset.sys;
+  document.getElementById('ctlHH').style.display = sys==='hh'?'block':'none';
+  document.getElementById('ctlSM').style.display = sys==='sm'?'block':'none';
+  document.getElementById('pTitle').textContent = sys==='hh'?'Hénon–Heiles':'Standard map';
+  document.getElementById('pDesc').textContent = sys==='hh'
+    ? 'A 2-DOF Hamiltonian flow — the classic testbed for KAM tori and their destruction with energy and perturbation.'
+    : 'The archetypal area-preserving map. As K grows, the last rotational torus (golden-mean) breaks at K≈0.9716.';
+  resize(); run();
+}));
+
+// boot
+document.getElementById('pDesc').textContent='A 2-DOF Hamiltonian flow — the classic testbed for KAM tori and their destruction with energy and perturbation.';
+resize(); run();
+</script>
+</body>
+</html>
